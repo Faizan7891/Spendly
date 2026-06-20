@@ -1,0 +1,123 @@
+/* ------------------------------------------------------------------ */
+/* Profile page — date filter                                          */
+/* ------------------------------------------------------------------ */
+
+.filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem;
+    background: var(--paper-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+/* Quick-select presets */
+
+.filter-presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.preset-btn {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--ink-muted);
+    background: var(--paper);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 0.45rem 0.9rem;
+    transition: color 0.2s, background 0.2s, border-color 0.2s;
+}
+
+.preset-btn:hover {
+    color: var(--ink);
+    border-color: var(--ink-faint);
+}
+
+.preset-btn--active {
+    color: var(--paper);
+    background: var(--accent);
+    border-color: var(--accent);
+}
+
+/* Custom range sub-form */
+
+.filter-custom {
+    display: flex;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.filter-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.filter-field label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--ink-muted);
+}
+
+.filter-field input {
+    font-family: var(--font-body);
+    font-size: 0.875rem;
+    color: var(--ink);
+    background: var(--paper);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 0.5rem 0.75rem;
+}
+
+.filter-field input:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.filter-apply {
+    font-family: var(--font-body);
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--paper);
+    background: var(--accent);
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 0.55rem 1.25rem;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.filter-apply:hover { background: var(--ink); }
+
+.filter-clear {
+    font-size: 0.875rem;
+    color: var(--ink-muted);
+    align-self: center;
+    transition: color 0.2s;
+}
+
+.filter-clear:hover { color: var(--ink); }
+
+.filter-summary {
+    font-size: 0.85rem;
+    color: var(--ink-muted);
+    margin-bottom: 1.5rem;
+}
+
+/* Shared empty-state for transaction + category sections */
+
+.empty-state {
+    font-size: 0.9rem;
+    color: var(--ink-muted);
+    text-align: center;
+    padding: 2rem 0;
+}
