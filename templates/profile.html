@@ -2,6 +2,10 @@
 
 {% block title %}Profile — Spendly{% endblock %}
 
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}">
+{% endblock %}
+
 {% block content %}
 <div class="prof-page">
     <div class="prof-inner">
@@ -15,6 +19,42 @@
                 <span class="hero-badge">Member since {{ user.member_since }}</span>
             </div>
         </div>
+
+        <!-- Date filter -->
+        <div class="filter-bar">
+            <div class="filter-presets">
+                <a href="{{ url_for('profile', date_from=presets.this_month, date_to=presets.today) }}"
+                   class="preset-btn{% if active_range.preset == 'this_month' %} preset-btn--active{% endif %}">This Month</a>
+                <a href="{{ url_for('profile', date_from=presets.last_3m, date_to=presets.today) }}"
+                   class="preset-btn{% if active_range.preset == 'last_3m' %} preset-btn--active{% endif %}">Last 3 Months</a>
+                <a href="{{ url_for('profile', date_from=presets.last_6m, date_to=presets.today) }}"
+                   class="preset-btn{% if active_range.preset == 'last_6m' %} preset-btn--active{% endif %}">Last 6 Months</a>
+                <a href="{{ url_for('profile') }}"
+                   class="preset-btn{% if active_range.preset == 'all' %} preset-btn--active{% endif %}">All Time</a>
+            </div>
+            <form class="filter-custom" method="GET" action="{{ url_for('profile') }}">
+                <div class="filter-field">
+                    <label for="filter-from">From</label>
+                    <input type="date" id="filter-from" name="date_from" value="{{ active_range.date_from }}">
+                </div>
+                <div class="filter-field">
+                    <label for="filter-to">To</label>
+                    <input type="date" id="filter-to" name="date_to" value="{{ active_range.date_to }}">
+                </div>
+                <button type="submit" class="filter-apply">Apply</button>
+                {% if active_range.active %}
+                <a href="{{ url_for('profile') }}" class="filter-clear">Clear</a>
+                {% endif %}
+            </form>
+        </div>
+
+        {% if active_range.active %}
+        <p class="filter-summary">
+            Showing
+            {% if active_range.date_from %}from {{ active_range.date_from }}{% endif %}
+            {% if active_range.date_to %}to {{ active_range.date_to }}{% endif %}
+        </p>
+        {% endif %}
 
         <!-- Summary stats -->
         <div class="prof-stats">
@@ -50,6 +90,7 @@
                     <i data-lucide="calendar"></i>
                     Recent Transactions
                 </h2>
+                {% if transactions %}
                 <table class="tx-table">
                     <thead>
                         <tr>
@@ -74,6 +115,9 @@
                         {% endfor %}
                     </tbody>
                 </table>
+                {% else %}
+                <p class="empty-state">No transactions found for this period.</p>
+                {% endif %}
             </div>
 
             <!-- Category breakdown -->
@@ -82,6 +126,7 @@
                     <i data-lucide="pie-chart"></i>
                     By Category
                 </h2>
+                {% if categories %}
                 {% for cat in categories %}
                 <div class="cat-row">
                     <div class="cat-row-header">
@@ -93,6 +138,9 @@
                     </div>
                 </div>
                 {% endfor %}
+                {% else %}
+                <p class="empty-state">No spending data for this period.</p>
+                {% endif %}
             </div>
 
         </div>

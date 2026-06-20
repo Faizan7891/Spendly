@@ -1,5 +1,7 @@
 import sqlite3
-from flask import Flask, render_template, request, session, redirect, url_for
+import calendar
+from datetime import date, datetime
+from flask import Flask, render_template, request, session, redirect, url_for, flash
 from werkzeug.security import generate_password_hash, check_password_hash
 from database.db import get_db, init_db, seed_db
 from database.queries import (
@@ -13,6 +15,30 @@ from database.queries import (
 def rupees(value):
     """Format a numeric amount as Indian Rupees, e.g. 346.24 -> '₹346.24'."""
     return f"₹{value:,.2f}"
+
+
+def _valid_date(value):
+    """Return value if it is a well-formed YYYY-MM-DD date, else None.
+
+    A malformed bound is ignored (treated as not supplied) rather than raising.
+    """
+    if not value:
+        return None
+    try:
+        datetime.strptime(value, "%Y-%m-%d")
+        return value
+    except ValueError:
+        return None
+
+
+def _months_ago(d, months):
+    """Return the date `months` calendar months before `d`, clamping the day."""
+    month_index = d.month - 1 - months
+    year = d.year + month_index // 12
+    month = month_index % 12 + 1
+    day = min(d.day, calendar.monthrange(year, month)[1])
+    return date(year, month, day)
+
 
 app = Flask(__name__)
 app.secret_key = "spendly-dev-secret"  # replace with env var before production
@@ -124,7 +150,17 @@ def profile():
         session.clear()
         return redirect(url_for("login", next="/profile"))
 
-    raw_stats = get_summary_stats(user_id)
+    date_from = _valid_date(request.args.get("date_from", "").strip())
+    date_to = _valid_date(request.args.get("date_to", "").strip())
+
+    # Both bounds are valid YYYY-MM-DD strings here, so lexicographic order
+    # matches chronological order. An inverted range is a user mistake: clear
+    # both bounds and tell them, rather than silently showing an empty page.
+    if date_from and date_to and date_from > date_to:
+        flash("Start date must be before end date.")
+        date_from = date_to = None
+
+    raw_stats = get_summary_stats(user_id, date_from=date_from, date_to=date_to)
     stats = {
         "total_spent": rupees(raw_stats["total_spent"]),
         "transaction_count": raw_stats["transaction_count"],
@@ -133,16 +169,44 @@ def profile():
 
     transactions = [
         {**tx, "amount": rupees(tx["amount"])}
-        for tx in get_recent_transactions(user_id)
+        for tx in get_recent_transactions(user_id, date_from=date_from, date_to=date_to)
     ]
 
     categories = [
         {"name": cat["name"], "amount": rupees(cat["amount"]), "percent": cat["pct"]}
-        for cat in get_category_breakdown(user_id)
+        for cat in get_category_breakdown(user_id, date_from=date_from, date_to=date_to)
     ]
 
+    # Quick-select preset boundaries (computed here, never in the template).
+    today = date.today()
+    presets = {
+        "today": today.isoformat(),
+        "this_month": today.replace(day=1).isoformat(),
+        "last_3m": _months_ago(today, 3).isoformat(),
+        "last_6m": _months_ago(today, 6).isoformat(),
+    }
+
+    if not date_from and not date_to:
+        active_preset = "all"
+    elif date_to == presets["today"] and date_from == presets["this_month"]:
+        active_preset = "this_month"
+    elif date_to == presets["today"] and date_from == presets["last_3m"]:
+        active_preset = "last_3m"
+    elif date_to == presets["today"] and date_from == presets["last_6m"]:
+        active_preset = "last_6m"
+    else:
+        active_preset = "custom"
+
+    active_range = {
+        "date_from": date_from or "",
+        "date_to": date_to or "",
+        "active": bool(date_from or date_to),
+        "preset": active_preset,
+    }
+
     return render_template("profile.html", user=user, stats=stats,
-                           transactions=transactions, categories=categories)
+                           transactions=transactions, categories=categories,
+                           active_range=active_range, presets=presets)
 
 
 @app.route("/expenses/add")

@@ -829,6 +829,23 @@ a { color: inherit; text-decoration: none; }
 .cat-bar--shopping      { background: #b06040; }
 .cat-bar--other         { background: var(--ink-faint); }
 
+/* Flash messages */
+
+.flash-container {
+    max-width: var(--max-width);
+    margin: 1.5rem auto 0;
+    padding: 0 2rem;
+}
+
+.flash {
+    background: var(--danger-light);
+    color: var(--danger);
+    border: 1px solid var(--danger);
+    border-radius: var(--radius-sm);
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+}
+
 /* Profile responsive */
 
 @media (max-width: 768px) {

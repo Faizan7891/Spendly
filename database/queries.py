@@ -32,6 +32,23 @@ def _member_since(created_at):
     return dt.strftime("%B %Y")
 
 
+def _date_clause(date_from, date_to):
+    """Return (sql_fragment, params) for an inclusive date range.
+
+    Either bound may be None. The fragment is meant to be appended after an
+    existing ``WHERE user_id = ?`` clause, e.g. " AND date >= ? AND date <= ?".
+    """
+    clauses, params = [], []
+    if date_from:
+        clauses.append("AND date >= ?")
+        params.append(date_from)
+    if date_to:
+        clauses.append("AND date <= ?")
+        params.append(date_to)
+    fragment = (" " + " ".join(clauses)) if clauses else ""
+    return fragment, params
+
+
 def get_user_by_id(user_id):
     """Return dict with name, email, member_since, initials — or None."""
     conn = get_db()
@@ -54,21 +71,26 @@ def get_user_by_id(user_id):
     }
 
 
-def get_summary_stats(user_id):
-    """Return dict with total_spent, transaction_count, top_category."""
+def get_summary_stats(user_id, date_from=None, date_to=None):
+    """Return dict with total_spent, transaction_count, top_category.
+
+    Optionally scope to an inclusive date range via date_from/date_to
+    (YYYY-MM-DD).
+    """
+    date_sql, date_params = _date_clause(date_from, date_to)
     conn = get_db()
     try:
         agg = conn.execute(
             "SELECT COALESCE(SUM(amount), 0) AS total, COUNT(*) AS cnt "
-            "FROM expenses WHERE user_id = ?",
-            (user_id,),
+            "FROM expenses WHERE user_id = ?" + date_sql,
+            (user_id, *date_params),
         ).fetchone()
 
         top = conn.execute(
-            "SELECT category FROM expenses WHERE user_id = ? "
-            "GROUP BY category ORDER BY SUM(amount) DESC, category ASC "
+            "SELECT category FROM expenses WHERE user_id = ?" + date_sql +
+            " GROUP BY category ORDER BY SUM(amount) DESC, category ASC "
             "LIMIT 1",
-            (user_id,),
+            (user_id, *date_params),
         ).fetchone()
     finally:
         conn.close()
@@ -83,14 +105,20 @@ def get_summary_stats(user_id):
     }
 
 
-def get_recent_transactions(user_id, limit=10):
-    """Return list of dicts (date, description, category, amount), newest-first."""
+def get_recent_transactions(user_id, limit=10, date_from=None, date_to=None):
+    """Return list of dicts (date, description, category, amount), newest-first.
+
+    Optionally scope to an inclusive date range via date_from/date_to
+    (YYYY-MM-DD).
+    """
+    date_sql, date_params = _date_clause(date_from, date_to)
     conn = get_db()
     try:
         rows = conn.execute(
             "SELECT date, description, category, amount FROM expenses "
-            "WHERE user_id = ? ORDER BY date DESC, id DESC LIMIT ?",
-            (user_id, limit),
+            "WHERE user_id = ?" + date_sql +
+            " ORDER BY date DESC, id DESC LIMIT ?",
+            (user_id, *date_params, limit),
         ).fetchall()
     finally:
         conn.close()
@@ -106,19 +134,22 @@ def get_recent_transactions(user_id, limit=10):
     ]
 
 
-def get_category_breakdown(user_id):
+def get_category_breakdown(user_id, date_from=None, date_to=None):
     """Return list of dicts (name, amount, pct) ordered by amount desc.
 
     pct values are integers that sum to exactly 100; the largest category
-    absorbs any rounding remainder.
+    absorbs any rounding remainder. Optionally scope to an inclusive date
+    range via date_from/date_to (YYYY-MM-DD).
     """
+    date_sql, date_params = _date_clause(date_from, date_to)
     conn = get_db()
     try:
         rows = conn.execute(
             "SELECT category, SUM(amount) AS total FROM expenses "
-            "WHERE user_id = ? GROUP BY category "
+            "WHERE user_id = ?" + date_sql +
+            " GROUP BY category "
             "ORDER BY total DESC, category ASC",
-            (user_id,),
+            (user_id, *date_params),
         ).fetchall()
     finally:
         conn.close()
