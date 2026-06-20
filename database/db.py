@@ -51,14 +51,14 @@ def seed_db():
     user_id = cursor.lastrowid
 
     expenses = [
-        (user_id, 12.50,  "Food",          "2026-06-01", "Lunch at cafe"),
+        (user_id, 42.50,  "Food",          "2026-06-01", "Lunch at cafe"),
         (user_id, 45.00,  "Transport",     "2026-06-03", "Monthly bus pass"),
         (user_id, 120.00, "Bills",         "2026-06-05", "Electricity bill"),
         (user_id, 30.00,  "Health",        "2026-06-08", "Pharmacy"),
-        (user_id, 25.00,  "Entertainment", "2026-06-10", "Netflix subscription"),
+        (user_id, 25.99,  "Entertainment", "2026-06-10", "Netflix subscription"),
         (user_id, 60.00,  "Shopping",      "2026-06-12", "New shirt"),
         (user_id, 8.75,   "Food",          "2026-06-15", "Grocery run"),
-        (user_id, 15.00,  "Other",         "2026-06-18", "Miscellaneous"),
+        (user_id, 14.00,  "Other",         "2026-06-18", "Miscellaneous"),
     ]
 
     conn.executemany(

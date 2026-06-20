@@ -2,6 +2,17 @@ import sqlite3
 from flask import Flask, render_template, request, session, redirect, url_for
 from werkzeug.security import generate_password_hash, check_password_hash
 from database.db import get_db, init_db, seed_db
+from database.queries import (
+    get_user_by_id,
+    get_summary_stats,
+    get_recent_transactions,
+    get_category_breakdown,
+)
+
+
+def rupees(value):
+    """Format a numeric amount as Indian Rupees, e.g. 346.24 -> '₹346.24'."""
+    return f"₹{value:,.2f}"
 
 app = Flask(__name__)
 app.secret_key = "spendly-dev-secret"  # replace with env var before production
@@ -106,33 +117,30 @@ def profile():
     if not session.get("user_id"):
         return redirect(url_for("login", next="/profile"))
 
-    user = {
-        "name": "Alex Johnson",
-        "email": "alex@example.com",
-        "member_since": "January 2024",
-        "initials": "AJ",
-    }
+    user_id = session["user_id"]
+
+    user = get_user_by_id(user_id)
+    if user is None:
+        session.clear()
+        return redirect(url_for("login", next="/profile"))
+
+    raw_stats = get_summary_stats(user_id)
     stats = {
-        "total_spent": "₹12,450",
-        "transaction_count": 24,
-        "top_category": "Food",
+        "total_spent": rupees(raw_stats["total_spent"]),
+        "transaction_count": raw_stats["transaction_count"],
+        "top_category": raw_stats["top_category"],
     }
+
     transactions = [
-        {"date": "Jun 18, 2025", "description": "Swiggy order",        "category": "Food",          "amount": "₹340"},
-        {"date": "Jun 17, 2025", "description": "Metro card recharge",  "category": "Transport",     "amount": "₹500"},
-        {"date": "Jun 15, 2025", "description": "Electricity bill",     "category": "Bills",         "amount": "₹1,200"},
-        {"date": "Jun 14, 2025", "description": "Pharmacy",             "category": "Health",        "amount": "₹280"},
-        {"date": "Jun 12, 2025", "description": "Netflix subscription", "category": "Entertainment", "amount": "₹649"},
-        {"date": "Jun 10, 2025", "description": "Grocery run",          "category": "Food",          "amount": "₹875"},
+        {**tx, "amount": rupees(tx["amount"])}
+        for tx in get_recent_transactions(user_id)
     ]
+
     categories = [
-        {"name": "Food",          "amount": "₹4,200", "percent": 34},
-        {"name": "Bills",         "amount": "₹3,100", "percent": 25},
-        {"name": "Shopping",      "amount": "₹2,400", "percent": 19},
-        {"name": "Transport",     "amount": "₹1,500", "percent": 12},
-        {"name": "Health",        "amount": "₹750",   "percent": 6},
-        {"name": "Entertainment", "amount": "₹500",   "percent": 4},
+        {"name": cat["name"], "amount": rupees(cat["amount"]), "percent": cat["pct"]}
+        for cat in get_category_breakdown(user_id)
     ]
+
     return render_template("profile.html", user=user, stats=stats,
                            transactions=transactions, categories=categories)
 
