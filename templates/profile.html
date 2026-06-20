@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block title %}Profile — Spendly{% endblock %}
+
+{% block content %}
+<div class="prof-page">
+    <div class="prof-inner">
+
+        <!-- User info card -->
+        <div class="prof-header">
+            <div class="prof-avatar">{{ user.initials }}</div>
+            <div class="prof-header-info">
+                <h1 class="prof-name">{{ user.name }}</h1>
+                <p class="prof-email">{{ user.email }}</p>
+                <span class="hero-badge">Member since {{ user.member_since }}</span>
+            </div>
+        </div>
+
+        <!-- Summary stats -->
+        <div class="prof-stats">
+            <div class="prof-stat-card">
+                <div class="prof-stat-icon">
+                    <i data-lucide="credit-card"></i>
+                </div>
+                <p class="prof-stat-label">Total Spent</p>
+                <p class="prof-stat-value">{{ stats.total_spent }}</p>
+            </div>
+            <div class="prof-stat-card">
+                <div class="prof-stat-icon">
+                    <i data-lucide="receipt"></i>
+                </div>
+                <p class="prof-stat-label">Transactions</p>
+                <p class="prof-stat-value">{{ stats.transaction_count }}</p>
+            </div>
+            <div class="prof-stat-card">
+                <div class="prof-stat-icon">
+                    <i data-lucide="tag"></i>
+                </div>
+                <p class="prof-stat-label">Top Category</p>
+                <p class="prof-stat-value">{{ stats.top_category }}</p>
+            </div>
+        </div>
+
+        <!-- Body: transaction table + category breakdown -->
+        <div class="prof-body">
+
+            <!-- Transaction history -->
+            <div class="prof-section">
+                <h2 class="prof-section-title">
+                    <i data-lucide="calendar"></i>
+                    Recent Transactions
+                </h2>
+                <table class="tx-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Description</th>
+                            <th>Category</th>
+                            <th>Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for tx in transactions %}
+                        <tr>
+                            <td>{{ tx.date }}</td>
+                            <td>{{ tx.description }}</td>
+                            <td>
+                                <span class="cat-badge cat-badge--{{ tx.category | lower }}">
+                                    {{ tx.category }}
+                                </span>
+                            </td>
+                            <td class="tx-amount">{{ tx.amount }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Category breakdown -->
+            <div class="prof-section">
+                <h2 class="prof-section-title">
+                    <i data-lucide="pie-chart"></i>
+                    By Category
+                </h2>
+                {% for cat in categories %}
+                <div class="cat-row">
+                    <div class="cat-row-header">
+                        <span class="cat-row-name">{{ cat.name }}</span>
+                        <span class="cat-row-meta">{{ cat.amount }} &middot; {{ cat.percent }}%</span>
+                    </div>
+                    <div class="cat-bar-track">
+                        <div class="cat-bar cat-bar--{{ cat.name | lower }}" style="width: {{ cat.percent }}%"></div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}
