@@ -31,6 +31,7 @@
                            class="form-input" placeholder="Your password"
                            required>
                 </div>
+                <input type="hidden" name="next" value="{{ next or '' }}">
                 <button type="submit" class="btn-submit">Sign in</button>
             </form>
         </div>
