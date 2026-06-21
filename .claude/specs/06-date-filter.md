@@ -65,6 +65,7 @@ supports `BETWEEN` comparison in SQLite.
 No new files.
 
 ## New dependencies
+
 No new dependencies.
 
 ## Rules for implementation
