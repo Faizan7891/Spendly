@@ -86,10 +86,16 @@
 
             <!-- Transaction history -->
             <div class="prof-section">
-                <h2 class="prof-section-title">
-                    <i data-lucide="calendar"></i>
-                    Recent Transactions
-                </h2>
+                <div class="prof-section-head">
+                    <h2 class="prof-section-title">
+                        <i data-lucide="calendar"></i>
+                        Recent Transactions
+                    </h2>
+                    <a href="{{ url_for('add_expense') }}" class="btn-add-expense">
+                        <i data-lucide="plus"></i>
+                        Add Expense
+                    </a>
+                </div>
                 {% if transactions %}
                 <table class="tx-table">
                     <thead>
@@ -98,6 +104,7 @@
                             <th>Description</th>
                             <th>Category</th>
                             <th>Amount</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -111,6 +118,13 @@
                                 </span>
                             </td>
                             <td class="tx-amount">{{ tx.amount }}</td>
+                            <td class="tx-actions">
+                                <a href="/expenses/{{ tx.id }}/edit" class="btn-edit">Edit</a>
+                                <form method="POST" action="/expenses/{{ tx.id }}/delete" style="display:inline"
+                                      onsubmit="return confirm('Delete this expense?')">
+                                    <button type="submit" class="btn-delete">Delete</button>
+                                </form>
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>

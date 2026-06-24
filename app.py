@@ -1,7 +1,7 @@
 import sqlite3
 import calendar
 from datetime import date, datetime
-from flask import Flask, render_template, request, session, redirect, url_for, flash
+from flask import Flask, render_template, request, session, redirect, url_for, flash, abort
 from werkzeug.security import generate_password_hash, check_password_hash
 from database.db import get_db, init_db, seed_db
 from database.queries import (
@@ -9,7 +9,54 @@ from database.queries import (
     get_summary_stats,
     get_recent_transactions,
     get_category_breakdown,
+    insert_expense,
+    get_expense_by_id,
+    update_expense,
+    delete_expense as delete_expense_row,
 )
+
+# The seven fixed expense categories used across add/edit forms and validation.
+CATEGORIES = ["Food", "Transport", "Bills", "Health", "Entertainment", "Shopping", "Other"]
+
+
+def _validate_expense_form(form):
+    """Validate add/edit expense form data.
+
+    Returns (values, error): ``values`` is a dict of the cleaned/submitted
+    fields suitable for re-populating the form; ``error`` is an error message
+    string or None when the data is valid. When valid, ``values`` also carries
+    the parsed ``amount`` as a float.
+    """
+    amount_raw = form.get("amount", "").strip()
+    category = form.get("category", "").strip()
+    date_raw = form.get("date", "").strip()
+    description = form.get("description", "").strip()
+
+    values = {
+        "amount": amount_raw,
+        "category": category,
+        "date": date_raw,
+        "description": description,
+    }
+
+    try:
+        amount = float(amount_raw)
+    except ValueError:
+        return values, "Amount is required and must be a number."
+    if amount <= 0:
+        return values, "Amount must be greater than 0."
+
+    if category not in CATEGORIES:
+        return values, "Please choose a valid category."
+
+    try:
+        datetime.strptime(date_raw, "%Y-%m-%d")
+    except ValueError:
+        return values, "Please enter a valid date."
+
+    values["amount"] = amount
+    values["description"] = description or None
+    return values, None
 
 
 def rupees(value):
@@ -216,19 +263,80 @@ def analytics():
     return render_template("analytics.html")
 
 
-@app.route("/expenses/add")
+@app.route("/expenses/add", methods=["GET", "POST"])
 def add_expense():
-    return "Add expense — coming in Step 7"
+    if not session.get("user_id"):
+        return redirect(url_for("login", next="/expenses/add"))
+
+    if request.method == "GET":
+        return render_template(
+            "add_expense.html",
+            categories=CATEGORIES,
+            values={"date": date.today().isoformat()},
+        )
+
+    values, error = _validate_expense_form(request.form)
+    if error:
+        return render_template(
+            "add_expense.html", categories=CATEGORIES, values=values, error=error
+        )
+
+    insert_expense(
+        session["user_id"],
+        values["amount"],
+        values["category"],
+        values["date"],
+        values["description"],
+    )
+    return redirect(url_for("profile"))
 
 
-@app.route("/expenses/<int:id>/edit")
+@app.route("/expenses/<int:id>/edit", methods=["GET", "POST"])
 def edit_expense(id):
-    return "Edit expense — coming in Step 8"
+    if not session.get("user_id"):
+        return redirect(url_for("login", next=f"/expenses/{id}/edit"))
+
+    expense = get_expense_by_id(id, session["user_id"])
+    if expense is None:
+        abort(404)
+
+    if request.method == "GET":
+        return render_template(
+            "edit_expense.html", categories=CATEGORIES, expense=expense, values=expense
+        )
+
+    values, error = _validate_expense_form(request.form)
+    if error:
+        return render_template(
+            "edit_expense.html",
+            categories=CATEGORIES,
+            expense=expense,
+            values=values,
+            error=error,
+        )
+
+    update_expense(
+        id,
+        session["user_id"],
+        values["amount"],
+        values["category"],
+        values["date"],
+        values["description"],
+    )
+    return redirect(url_for("profile"))
 
 
-@app.route("/expenses/<int:id>/delete")
+@app.route("/expenses/<int:id>/delete", methods=["POST"])
 def delete_expense(id):
-    return "Delete expense — coming in Step 9"
+    if not session.get("user_id"):
+        return redirect(url_for("login", next="/profile"))
+
+    expense = get_expense_by_id(id, session["user_id"])
+    if expense is None:
+        abort(404)
+
+    delete_expense_row(id, session["user_id"])
+    return redirect(url_for("profile"))
 
 
 if __name__ == "__main__":

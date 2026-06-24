@@ -23,6 +23,7 @@
                 <a href="{{ url_for('dashboard') }}" class="{{ 'nav-active' if request.endpoint == 'dashboard' else '' }}">Dashboard</a>
                 <a href="{{ url_for('profile') }}" class="{{ 'nav-active' if request.endpoint == 'profile' else '' }}">Profile</a>
                 <a href="{{ url_for('analytics') }}" class="{{ 'nav-active' if request.endpoint == 'analytics' else '' }}">Analytics</a>
+                <a href="{{ url_for('add_expense') }}" class="{{ 'nav-active' if request.endpoint == 'add_expense' else '' }}">Add Expense</a>
                 <a href="{{ url_for('logout') }}" class="nav-cta">Log out</a>
                 {% else %}
                 <a href="{{ url_for('login') }}">Sign in</a>

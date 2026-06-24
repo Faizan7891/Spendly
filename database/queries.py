@@ -115,7 +115,7 @@ def get_recent_transactions(user_id, limit=10, date_from=None, date_to=None):
     conn = get_db()
     try:
         rows = conn.execute(
-            "SELECT date, description, category, amount FROM expenses "
+            "SELECT id, date, description, category, amount FROM expenses "
             "WHERE user_id = ?" + date_sql +
             " ORDER BY date DESC, id DESC LIMIT ?",
             (user_id, *date_params, limit),
@@ -125,6 +125,7 @@ def get_recent_transactions(user_id, limit=10, date_from=None, date_to=None):
 
     return [
         {
+            "id": r["id"],
             "date": r["date"],
             "description": r["description"],
             "category": r["category"],
@@ -170,3 +171,84 @@ def get_category_breakdown(user_id, date_from=None, date_to=None):
         breakdown[0]["pct"] += remainder
 
     return breakdown
+
+
+def insert_expense(user_id, amount, category, date, description):
+    """Insert a new expense for the given user. Returns the new row id."""
+    conn = get_db()
+    try:
+        cursor = conn.execute(
+            "INSERT INTO expenses (user_id, amount, category, date, description) "
+            "VALUES (?, ?, ?, ?, ?)",
+            (user_id, amount, category, date, description),
+        )
+        conn.commit()
+        return cursor.lastrowid
+    finally:
+        conn.close()
+
+
+def get_expense_by_id(expense_id, user_id):
+    """Return a single expense as a dict only if it belongs to user_id, else None.
+
+    Scoped to ``id = ? AND user_id = ?`` so one user can never read another
+    user's expense.
+    """
+    conn = get_db()
+    try:
+        row = conn.execute(
+            "SELECT id, user_id, amount, category, date, description "
+            "FROM expenses WHERE id = ? AND user_id = ?",
+            (expense_id, user_id),
+        ).fetchone()
+    finally:
+        conn.close()
+
+    if row is None:
+        return None
+
+    return {
+        "id": row["id"],
+        "user_id": row["user_id"],
+        "amount": row["amount"],
+        "category": row["category"],
+        "date": row["date"],
+        "description": row["description"],
+    }
+
+
+def update_expense(expense_id, user_id, amount, category, date, description):
+    """Update an expense in place, scoped to id AND user_id for ownership safety.
+
+    Returns the number of rows affected (0 if the expense does not belong to
+    the user, in which case nothing changes).
+    """
+    conn = get_db()
+    try:
+        cursor = conn.execute(
+            "UPDATE expenses SET amount = ?, category = ?, date = ?, description = ? "
+            "WHERE id = ? AND user_id = ?",
+            (amount, category, date, description, expense_id, user_id),
+        )
+        conn.commit()
+        return cursor.rowcount
+    finally:
+        conn.close()
+
+
+def delete_expense(expense_id, user_id):
+    """Delete an expense, scoped to id AND user_id for ownership safety.
+
+    Returns the number of rows deleted (0 if the expense does not belong to
+    the user).
+    """
+    conn = get_db()
+    try:
+        cursor = conn.execute(
+            "DELETE FROM expenses WHERE id = ? AND user_id = ?",
+            (expense_id, user_id),
+        )
+        conn.commit()
+        return cursor.rowcount
+    finally:
+        conn.close()

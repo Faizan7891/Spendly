@@ -770,6 +770,85 @@ a { color: inherit; text-decoration: none; }
     font-variant-numeric: tabular-nums;
     font-weight: 500;
     color: var(--ink);
+    text-align: right;
+}
+
+/* Section header with action button */
+
+.prof-section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-soft);
+}
+
+.prof-section-head .prof-section-title {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.btn-add-expense {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: var(--ink);
+    color: var(--paper);
+    padding: 0.45rem 1rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.85rem;
+    font-weight: 500;
+    white-space: nowrap;
+    transition: background 0.2s;
+}
+
+.btn-add-expense:hover { background: var(--accent); }
+
+.btn-add-expense svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* Transaction row actions */
+
+.tx-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.btn-edit {
+    color: var(--accent);
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: text-decoration 0.2s;
+}
+
+.btn-edit:hover { text-decoration: underline; }
+
+.btn-delete {
+    background: transparent;
+    color: var(--danger);
+    border: none;
+    padding: 0;
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: text-decoration 0.2s;
+}
+
+.btn-delete:hover { text-decoration: underline; }
+
+/* Optional-field hint on form labels */
+
+.form-optional {
+    color: var(--ink-faint);
+    font-weight: 400;
 }
 
 /* Category badges */
